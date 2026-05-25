@@ -7,7 +7,7 @@
 """
 
 import can
-from can import Bus, Message
+from can import Bus
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from collections import deque
