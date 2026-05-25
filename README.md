@@ -1,159 +1,200 @@
 # BLDC Motor Control System
 
-## Project Description
+## Описание проекта
 
-A Brushless DC (BLDC) motor control system based on the **Field Oriented Control (FOC)** algorithm using the **CAN** protocol.
+Система управления бесколлекторным двигателем постоянного тока (BLDC) на основе алгоритма **Field Oriented Control (FOC)** с использованием протокола **CAN**.
 
-## Components
+## Компоненты
 
-- **Motor**: KMTech MG4010E v3
-- **Communication Protocol**: CAN (Controller Area Network)
-- **Programming Language**: Python 3
-- **Libraries**:
-  - `python-can` - CAN bus communication
-  - `matplotlib` - real-time data visualization
+- **Двигатель**: KMTech MG4010E v3
+- **Протокол связи**: CAN (Controller Area Network)
+- **Язык программирования**: Python 3
+- **Библиотеки**:
+  - `python-can` - связь с CAN шиной
+  - `matplotlib` - визуализация данных в реальном времени
 
-## Installation
+## Установка
 
 ```bash
 pip install python-can matplotlib
 ```
 
-## Usage
+## Запуск программы
 
-### Simulation Mode (without hardware)
+### Режим симуляции (без оборудования) - РЕКОМЕНДУЕТСЯ ДЛЯ ТЕСТА
 
 ```bash
 python bldc_motor_control.py --simulate
 ```
 
-### Connect to Real CAN Bus
+Или кратко:
 
 ```bash
-# Virtual CAN interface
+python bldc_motor_control.py -s
+```
+
+### Подключение к реальной CAN шине
+
+```bash
+# Виртуальный CAN интерфейс (для тестов на Linux)
 python bldc_motor_control.py --channel vcan0
 
-# Physical CAN interface
+# Физический CAN интерфейс
 python bldc_motor_control.py --channel can0 --bitrate 500000
 ```
 
-## Command Line Options
+## Команды для запуска на Windows
 
-| Option | Short | Default | Description |
-|--------|-------|---------|-------------|
-| `--channel` | `-c` | `vcan0` | CAN interface (can0, vcan0, usbcan) |
-| `--bitrate` | `-b` | `500000` | Bit rate in bits per second |
-| `--simulate` | `-s` | `False` | Simulation mode without hardware |
+Откройте PowerShell или Command Prompt и выполните:
 
-## Features
+```powershell
+# Перейдите в директорию с проектом
+cd C:\Users\User\Desktop
 
-### BLDCMotorController Class
+# Запуск в режиме симуляции
+python bldc_motor_control.py --simulate
+```
 
-Main motor control class:
+## Опции командной строки
 
-- CAN bus connect/disconnect
-- Receive messages from motor
-- Parse current data (Id, Iq, Ia, Ib, Ic)
-- Send commands to motor
-- Generate simulated data for testing
+| Опция | Краткая | По умолчанию | Описание |
+|-------|---------|--------------|----------|
+| `--channel` | `-c` | `vcan0` | CAN интерфейс (can0, vcan0, usbcan) |
+| `--bitrate` | `-b` | `500000` | Скорость передачи в битах в секунду |
+| `--simulate` | `-s` | `False` | Режим симуляции без оборудования |
 
-### CurrentVisualizer Class
+## Возможности
 
-Real-time current visualization:
+### Класс BLDCMotorController
 
-- D-Q frame currents display (rotating reference)
-- Three-phase A-B-C currents display (stationary reference)
-- Real-time metrics calculation and display
-- Automatic time axis scaling
+Основной класс управления двигателем:
 
-## CAN Message Format
+- Подключение/отключение к CAN шине
+- Получение сообщений от двигателя
+- Парсинг данных о токах (Id, Iq, Ia, Ib, Ic)
+- Отправка команд двигателю
+- Генерация симулированных данных для тестирования
 
-### Current Feedback (CAN ID: 0x201)
+### Класс CurrentVisualizer
 
-Expected data format (8 bytes):
+Визуализация токов в реальном времени:
 
-| Bytes | Parameter | Type | Scale |
-|-------|-----------|------|-------|
-| 0-1 | Current Id | int16 (LE) | 0.01 A |
-| 2-3 | Current Iq | int16 (LE) | 0.01 A |
-| 4-5 | Current Ia | int16 (LE) | 0.01 A |
-| 6-7 | Current Ib | int16 (LE) | 0.01 A |
+- Отображение токов D-Q рамки (вращающаяся система координат)
+- Отображение трёхфазных токов A-B-C (неподвижная система координат)
+- Расчёт и отображение метрик в реальном времени
+- Автоматическое масштабирование оси времени
 
-**Note**: Format may vary depending on motor configuration. Please refer to KMTech MG4010E v3 documentation.
+## Формат CAN сообщений
 
-## FOC Algorithm
+### Обратная связь по токам (CAN ID: 0x201)
 
-Field Oriented Control (FOC) allows independent control of magnetic flux and torque:
+Ожидаемый формат данных (8 байт):
 
-- **Id (Direct current)** - flux-producing current
-- **Iq (Quadrature current)** - torque-producing current
+| Байты | Параметр | Тип | Масштаб |
+|-------|----------|-----|---------|
+| 0-1 | Ток Id | int16 (LE) | 0.01 A |
+| 2-3 | Ток Iq | int16 (LE) | 0.01 A |
+| 4-5 | Ток Ia | int16 (LE) | 0.01 A |
+| 6-7 | Ток Ib | int16 (LE) | 0.01 A |
 
-Coordinate transformations:
-- **ABC → DQ** (Park transform) - stationary to rotating frame
-- **DQ → ABC** (Inverse Park transform) - rotating to stationary frame
+**Примечание**: Формат может отличаться в зависимости от конфигурации двигателя. См. документацию KMTech MG4010E v3.
 
-## CAN Interface Setup on Linux
+## Алгоритм FOC
 
-### Create Virtual CAN Interface for Testing
+Field Oriented Control (FOC) позволяет независимо управлять магнитным потоком и крутящим моментом:
+
+- **Id (прямой ток)** - ток намагничивания
+- **Iq (квадратурный ток)** - ток создающий крутящий момент
+
+Преобразования координат:
+- **ABC → DQ** (преобразование Парка) - из неподвижной во вращающуюся систему
+- **DQ → ABC** (обратное преобразование Парка) - из вращающейся в неподвижную систему
+
+## Настройка CAN интерфейса в Linux
+
+### Создание виртуального CAN интерфейса для тестов
 
 ```bash
-# Load vcan module
+# Загрузка модуля vcan
 sudo modprobe vcan
 
-# Create virtual CAN interface
+# Создание виртуального CAN интерфейса
 sudo ip link add dev vcan0 type vcan
 sudo ip link set up vcan0
 
-# Verify interface
+# Проверка интерфейса
 ip link show vcan0
 ```
 
-### Configure Physical CAN Interface
+### Настройка физического CAN интерфейса
 
 ```bash
-# Setup CAN interface
+# Настройка CAN интерфейса
 sudo ip link set can0 up type can bitrate 500000
 
-# Verify interface
+# Проверка интерфейса
 ip -details link show can0
 ```
 
-## Project Structure
+## Структура проекта
 
 ```
 /workspace/
-├── bldc_motor_control.py    # Main control script
-└── README.md                # Documentation
+├── bldc_motor_control.py    # Основной скрипт управления
+└── README.md                # Документация
 ```
 
-## Usage Example
+## Пример использования
 
 ```python
 from bldc_motor_control import BLDCMotorController, CurrentVisualizer
 
-# Create controller
+# Создание контроллера
 controller = BLDCMotorController(channel='can0', bitrate=500000)
 
-# Connect
+# Подключение
 if controller.connect():
-    # Receive message
+    # Получение сообщения
     msg = controller.receive_message(timeout=1.0)
     
     if msg:
-        # Parse current data
+        # Парсинг данных о токах
         data = controller.parse_current_data(msg)
         print(f"Id: {data['id']:.2f} A, Iq: {data['iq']:.2f} A")
     
-    # Disconnect
+    # Отключение
     controller.disconnect()
 ```
 
-## Hardware Requirements
+## Требования к оборудованию
 
-- CAN adapter (e.g., USB-CAN, PCAN, SocketCAN compatible)
-- KMTech MG4010E v3 motor with CAN interface
-- Computer with Linux OS (recommended) or Windows with appropriate drivers
+- CAN адаптер (например, USB-CAN, PCAN, SocketCAN совместимый)
+- Двигатель KMTech MG4010E v3 с CAN интерфейсом
+- Компьютер с ОС Linux (рекомендуется) или Windows с соответствующими драйверами
 
-## License
+## Решение проблем
 
-This project is developed for educational purposes.
+### Проблема: "module 'can' has no attribute 'interface'"
+
+**Решение**: Обновите библиотеку python-can:
+
+```bash
+pip install --upgrade python-can
+```
+
+### Проблема: График не отображается или пустой
+
+**Решение**:
+1. Убедитесь, что используется флаг `--simulate` для тестирования без оборудования
+2. Проверьте установку matplotlib: `pip install matplotlib`
+3. На Windows попробуйте установить бэкенд: `pip install pyqt5`
+
+### Проблема: Ошибка подключения к CAN на Windows
+
+**Решение**:
+1. Установите драйверы для вашего CAN адаптера (IXXAT, Peak, и т.д.)
+2. Используйте режим симуляции для тестирования без оборудования: `python bldc_motor_control.py --simulate`
+
+## Лицензия
+
+Этот проект разработан в образовательных целях.
