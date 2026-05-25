@@ -7,6 +7,7 @@
 """
 
 import can
+from can import Bus
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from collections import deque
@@ -43,9 +44,19 @@ class BLDCMotorController:
     def connect(self):
         """Подключение к CAN шине"""
         try:
-            self.bus = can.interface.Bus(
+            # Пробуем разные типы интерфейсов для Windows
+            bustype = 'virtual'  # Для тестирования без оборудования
+            
+            if self.channel == 'vcan0':
+                bustype = 'virtual'
+            elif self.channel.startswith('can'):
+                bustype = 'socketcan'  # Linux
+            else:
+                bustype = 'ixxat'  # Windows с оборудованием IXXAT
+            
+            self.bus = Bus(
                 channel=self.channel,
-                bustype='socketcan',
+                bustype=bustype,
                 bitrate=self.bitrate
             )
             print(f"✓ Подключено к CAN шине: {self.channel} ({self.bitrate} бит/с)")
@@ -353,13 +364,17 @@ class CurrentVisualizer:
         print("Закройте окно графика для остановки программы")
         print("="*60 + "\n")
         
+        # Инициализация начальных данных
+        self.init_animation()
+        
         self.anim = FuncAnimation(
             self.fig, 
             self.update,
             init_func=self.init_animation,
-            blit=True,
+            blit=False,  # Отключаем blit для стабильности на Windows
             interval=interval,
-            cache_frame_data=False
+            cache_frame_data=False,
+            repeat=True
         )
         
         plt.tight_layout()
@@ -405,12 +420,15 @@ def main():
     )
     
     # Подключение или режим симуляции
+    use_simulation = args.simulate
     if not args.simulate:
         connected = controller.connect()
         if not connected:
             print("\nПереход в режим симуляции...")
+            use_simulation = True
     else:
-        print("Режим симуляции активирован")
+        print("✓ Режим симуляции активирован")
+        print("  Генерация тестовых данных о токах двигателя")
     
     # Создание визуализатора
     visualizer = CurrentVisualizer(controller, max_points=200)
@@ -420,6 +438,10 @@ def main():
         visualizer.start(interval=50)
     except KeyboardInterrupt:
         print("\n\nОстановка программы пользователем...")
+    except Exception as e:
+        print(f"\n✗ Ошибка: {e}")
+        import traceback
+        traceback.print_exc()
     finally:
         # Отключение
         controller.disconnect()
